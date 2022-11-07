@@ -9,6 +9,10 @@ import datetime
 
 time.strftime('%d-%m-%Y')
 
+@app.route('/')
+def index():
+    return "main index"
+
 @app.route('/Account', methods=['POST'])
 def CreateAcc():
     try:        
