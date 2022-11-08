@@ -28,7 +28,7 @@ def CreateAcc():
         if _name and _email and _DOB and _username and request.method == 'POST':
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            _date = datetime.strptime(_DOB, '%d-%m-%Y')
+            _date = datetime.datetime.strptime(_DOB, '%d-%m-%Y')
             sqlQuery = "INSERT INTO User_(Name, DOB, Email,sex) Values (%s, %s, %s, %s)"
             bindData = (_name, _date, _email, _sex)
             cursor.execute(sqlQuery, bindData)
@@ -41,7 +41,7 @@ def CreateAcc():
                 cursor.close()
                 conn.close()
                 return respone		
-            sqlQuery = "INSERT INTO account(Username, Pass, Ques, Ans, UserID) values (%s, %s, %s, %s, %d)"
+            sqlQuery = "INSERT INTO account(Username, Pass, Ques, Ans, UserID) values (%s, %s, %s, %s, %s)"
             bindData = (_username, _pass, _ques, _ans, _id)            
             cursor.execute(sqlQuery, bindData)
             conn.commit()
@@ -250,7 +250,7 @@ def getFavList():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         UserID = json_['UserID']
-        if UserID:
+        if UserID and request.method == "GET":
             sqlquery = "SELECT Name,Calo,Protein,Fat,Des from food WHERE ID IN (SELECT FoodID from pick WHERE UserID = %s)"
             bindData = (UserID)
             cursor.execute(sqlquery, bindData)
@@ -268,7 +268,105 @@ def getFavList():
         if conn.open:
             cursor.close()
             conn.close()
-       
+    
+@app.route('/favList', methods = ['DELETE'])
+def delFoodFromList():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        UserID = json_['UserID']
+        FoodID = json_['FoodID']
+        if UserID and FoodID and request.method == "DELETE":
+            rc = cursor.execute("DELETE FROM pick WHERE FoodID = %s and UserID = %s and type = %s", (FoodID, UserID, "favorite"))
+            conn.commit()
+            if rc != 0:
+                d = {"Status" : "OK"}
+                reponse = jsonify(d)
+                reponse.status_code = 200
+                return reponse
+            else:
+                d = {"Status": "Not exist"}
+                reponse = jsonify(d)
+                reponse.status_code = 200
+                return reponse
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/plan', methods = ['POST'])
+def createPlan():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        userID = json_['userID']
+        rc = cursor.execute("SELECT date_,type_ from pick where UserID = %s", (userID))
+        if rc != 0 and cursor._result.rows[0][0] == datetime.date.today() and cursor._result.rows[0][1] == "plan":
+            d = {"status": "existence"}
+            reponse = jsonify(d)
+            reponse.status_code = 200
+            return reponse
+        breakfast = json_['breakfast']
+        lunch = json_['lunch']
+        dinner = json_['dinner']
+        rc = cursor.execute("SELECT calo from food WHERE id in (%s,%s,%s)", (breakfast, dinner, lunch))
+        res = cursor._rows
+        s = 0
+        for x in res:
+            s += x['calo']
+        cursor.execute("SELECT TDEE FROM user_ WHERE id = %s", (userID))
+        tdee = cursor._rows[0]['TDEE']
+        if tdee - s > 500:
+            reponse = jsonify("not enough")
+            reponse.status_code = 200
+            return reponse
+        elif s - tdee > 500:
+            reponse = jsonify("too much")
+            reponse.status_code = 200
+            return reponse
+        cursor.execute("INSERT into pick(userid, foodid, time_, type_, date_) VALUES (%s, %s, %s, %s, %s)", (userID, breakfast, "breakfast", "plan", datetime.date.today()))
+        cursor.execute("INSERT into pick(userid, foodid, time_, type_, date_) VALUES (%s, %s, %s, %s, %s)", (userID, lunch, "lunch", "plan", datetime.date.today()))
+        cursor.execute("INSERT into pick(userid, foodid, time_, type_, date_) VALUES (%s, %s, %s, %s, %s)", (userID, dinner, "dinner", "plan", datetime.date.today()))
+        conn.commit()
+        reponse = jsonify("OK")
+        reponse.status_code = 200
+        return reponse
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/plan')
+def getFoodPlan():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        userID = json_['userID']
+        rc = cursor.execute("SELECT foodID FROM pick WHERE UserID = %s and date = DATE(now())", userID)
+        if rc == 0:
+            reponse = jsonify("Not exist")
+            reponse.status_code = 200
+            return reponse
+        res = cursor.fetchall()
+        cursor.execute("SELECT * FROM food WHERE id in (%s, %s,%s)", (res[0]['foodID'], res[1]['foodID'], res[2]['foodID']))
+        final = cursor.fetchall()
+        reponse = jsonify(final)
+        reponse.status_code = 200
+        return reponse
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+            
 @app.errorhandler(404)
 def showMessage(error=None):
     message = {
