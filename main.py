@@ -211,6 +211,51 @@ def editFood():
             cursor.close()
             conn.close()
 
+@app.route('/food')
+def getFood():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        foodID = json_["foodID"]
+        rc = cursor.execute("select * from food where ID = %s", foodID)
+        if rc == 0:
+            reponse = jsonify("no food")
+            reponse.status_code = 200
+            return reponse
+        res = cursor.fetchall()
+        reponse = jsonify(res)
+        reponse.status_code = 200
+        return reponse
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/food', methods = ['DELETE'])
+def delFood():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        foodID = json_["foodID"]
+        rc = cursor.execute("delete from food where ID = %s", foodID)
+        if rc == 0:
+            reponse = jsonify("no food")
+            reponse.status_code = 200
+            return reponse
+        conn.commit()
+        reponse = jsonify("OK")
+        reponse.status_code = 200
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+            
 @app.route('/favList', methods = ['POST'])
 def addFav():
     try:
