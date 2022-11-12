@@ -2,7 +2,7 @@ import pymysql
 from app import app
 from config import mysql
 from flask import jsonify
-from flask import flash, request
+from flask import flash, request, render_template
 import time
 from datetime import datetime
 import datetime
@@ -11,7 +11,41 @@ time.strftime('%d-%m-%Y')
 
 @app.route('/')
 def index():
-    return "main index"
+    return render_template('index.html')
+
+@app.route('/', methods= ['POST'])
+def addFoodWeb():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        name = request.form['name']
+        calo = request.form['calo']
+        protein = request.form['protein']
+        fat = request.form['fat']
+        description = request.form['desc']
+        if name and calo and protein and fat and description:
+            cursor.execute("SELECT * from food WHERE Name = %s", name)
+            if cursor.rowcount != 0:
+                d = {"status" :"Food name have already existed"}
+                reponse = jsonify(d)
+                reponse.status_code = 200
+                return reponse
+            query = "INSERT into food(Name, Calo, Protein, Fat, Des) VALUES (%s, %s, %s,%s,%s)"
+            bindData = (name, calo, protein, fat, description)
+            cursor.execute(query, bindData)
+            conn.commit()
+            d = {"status" : "OK"}
+            reponse = jsonify(d)
+            reponse.status_code = 200
+            return reponse
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
 
 @app.route('/Account', methods=['POST'])
 def CreateAcc():
