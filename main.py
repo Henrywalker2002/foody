@@ -24,6 +24,7 @@ def addFoodWeb():
         protein = request.form['protein']
         fat = request.form['fat']
         description = request.form['desc']
+        link = request.form['link']
         if name and calo and protein and fat and description:
             cursor.execute("SELECT * from food WHERE Name = %s", name)
             if cursor.rowcount != 0:
@@ -31,8 +32,8 @@ def addFoodWeb():
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
-            query = "INSERT into food(Name, Calo, Protein, Fat, Des) VALUES (%s, %s, %s,%s,%s)"
-            bindData = (name, calo, protein, fat, description)
+            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image) VALUES (%s, %s, %s,%s,%s,%s)"
+            bindData = (name, calo, protein, fat, description,link)
             cursor.execute(query, bindData)
             conn.commit()
             d = {"status" : "OK"}
