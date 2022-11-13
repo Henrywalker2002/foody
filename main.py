@@ -448,6 +448,87 @@ def getFoodPlan():
             cursor.close()
             conn.close()
             
+@app.route('/search', methods = ['GET'])
+def findByName():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        text = json_['text']
+        cursor.execute("select *, match (Des) against (%s) as score from food where  match (Des) against (%s) > 0", (text, text))
+        res = cursor.fetchall()
+        response = jsonify(res)
+        response.status_code = 200
+        return response
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/forgotpass', methods = ['GET'])
+def checkQues():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        ques = json_['ques']
+        ans = json_['ans']
+        username = json_['username']
+        rc = cursor.execute("select ques, ans from account where username = %s", username)
+        if rc == 0:
+            return jsonify("username is not exist")
+        if ques == cursor._rows[0]['ques'] and ans == cursor._rows[0]['ans']:
+            return jsonify("correct")
+        else:
+            return jsonify("not correct")
+        
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+            
+@app.route("/password", methods = ['GET'])
+def getPass():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        username = json_['username']
+        rc = cursor.execute("select pass from account where username = %s", username)
+        if rc == 0:
+            return jsonify("user is not exist")
+        return jsonify(cursor._rows[0]['pass'])
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+    
+@app.route("/password", methods = ['PUT'])
+def updatePass():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        username = json_['username']
+        newPass = json_['newPass']
+        rc = cursor.execute("update account set pass = %s where username = %s",(newPass, username))
+        if rc == 0:
+            return jsonify("not successful")
+        conn.commit()
+        return jsonify("OK")
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
 @app.errorhandler(404)
 def showMessage(error=None):
     message = {
