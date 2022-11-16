@@ -257,13 +257,13 @@ def getFood():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         foodID = json_["foodID"]
-        rc = cursor.execute("select * from food where ID = %s", foodID)
+        rc = cursor.execute("select *, avg(star) as starAVG from food, review where foodID = %s", foodID)
         if rc == 0:
             reponse = jsonify("no food")
             reponse.status_code = 200
             return reponse
         res = cursor.fetchall()
-        reponse = jsonify(res)
+        reponse = jsonify(res[0])
         reponse.status_code = 200
         return reponse
     except Exception as e:
@@ -540,14 +540,15 @@ def reviewFood():
         json_ = request.json
         foodid = json_['foodID']
         userid = json_['userID']
-        cmt = json_['commment']
+        cmt = json_['comment']
         star = json_['star']
         if star < 0 or star > 5:
             return jsonify("star is invalid")
-        rc = cursor.execute("SELECT * from review WHERE FoodID = %s and UserID = %s")
+        rc = cursor.execute("SELECT * from review WHERE FoodID = %s and UserID = %s", (foodid, userid))
         if rc != 0:
             rc = cursor.execute('update review set Star = %s, Comment = % WHERE UserID = %s and FoodID = %s', (star, cmt, userid, foodid))
         cursor.execute("INSERT into review (FoodID, UserID, Comment, Star) values (%s, %s, %s,%s)", (foodid, userid, cmt, star))
+        conn.commit()
         return jsonify("OK")
     except Exception as e:
         print(e)
@@ -562,7 +563,10 @@ def getReviews():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        foodid = json_()
+        foodid = json_['foodID']
+        rc = cursor.execute("select * from review where foodID = %s", foodid)
+        res = cursor.fetchall()
+        return jsonify(res)
     except Exception as e:
         print(e)
     finally:
@@ -575,7 +579,9 @@ def getListFood():
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        json_ = request.json
+        rc = cursor.execute("SELECT * FROM food order by rand() limit 40")
+        res = cursor.fetchall()
+        return jsonify(res)
     except Exception as e:
         print(e)
     finally:
