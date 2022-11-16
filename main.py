@@ -566,7 +566,7 @@ def getReviews():
         foodid = json_['foodID']
         rc = cursor.execute("select * from review where foodID = %s", foodid)
         res = cursor.fetchall()
-        return jsonify(res)
+        return jsonify(res[0])
     except Exception as e:
         print(e)
     finally:
