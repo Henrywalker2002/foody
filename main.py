@@ -546,8 +546,13 @@ def reviewFood():
             return jsonify("star is invalid")
         rc = cursor.execute("SELECT * from review WHERE FoodID = %s and UserID = %s", (foodid, userid))
         if rc != 0:
-            rc = cursor.execute('update review set Star = %s, Comment = % WHERE UserID = %s and FoodID = %s', (star, cmt, userid, foodid))
-        cursor.execute("INSERT into review (FoodID, UserID, Comment, Star) values (%s, %s, %s,%s)", (foodid, userid, cmt, star))
+            rc = cursor.execute('update review set Star = %s, Comment = %s WHERE UserID = %s and FoodID = %s', (star, cmt, userid, foodid))
+        else:
+            cursor.execute("INSERT into review (FoodID, UserID, Comment, Star) values (%s, %s, %s,%s)", (foodid, userid, cmt, star))
+        cursor.execute("select avg(star) from review where foodid= %s", foodid)
+        avgStar = cursor.fetchone()
+        avgStar = avgStar['avg(star)']
+        cursor.execute("update food set avgStar = %s where id = %s", (avgStar, foodid))
         conn.commit()
         return jsonify("OK")
     except Exception as e:
@@ -602,3 +607,4 @@ def showMessage(error=None):
 if __name__ == "__main__":
     app.debug = True
     app.run()
+    
