@@ -257,7 +257,7 @@ def getFood():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         foodID = json_["foodID"]
-        rc = cursor.execute("select *, avg(star) as starAVG from food, review where foodID = %s", foodID)
+        rc = cursor.execute("select * from food where foodID = %s", foodID)
         if rc == 0:
             reponse = jsonify("no food")
             reponse.status_code = 200
@@ -571,7 +571,7 @@ def getReviews():
         foodid = json_['foodID']
         rc = cursor.execute("select * from review where foodID = %s", foodid)
         res = cursor.fetchall()
-        return jsonify(res[0])
+        return jsonify(res)
     except Exception as e:
         print(e)
     finally:
