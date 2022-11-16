@@ -25,6 +25,7 @@ def addFoodWeb():
         fat = request.form['fat']
         description = request.form['desc']
         link = request.form['link']
+        recipt = request.form['recipt']
         if name and calo and protein and fat and description:
             cursor.execute("SELECT * from food WHERE Name = %s", name)
             if cursor.rowcount != 0:
@@ -32,8 +33,8 @@ def addFoodWeb():
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
-            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image) VALUES (%s, %s, %s,%s,%s,%s)"
-            bindData = (name, calo, protein, fat, description,link)
+            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image, recipt) VALUES (%s, %s, %s,%s,%s,%s, %s)"
+            bindData = (name, calo, protein, fat, description,link, recipt)
             cursor.execute(query, bindData)
             conn.commit()
             d = {"status" : "OK"}
@@ -194,6 +195,7 @@ def addFood():
         fat = json_['fat']
         description = json_['description']
         link = json_['link']
+        recipt = json_['recipt']
         if name and calo and protein and fat and description:
             cursor.execute("SELECT * from food WHERE Name = %s", name)
             if cursor.rowcount != 0:
@@ -201,8 +203,8 @@ def addFood():
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
-            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image) VALUES (%s, %s, %s,%s,%s,%s)"
-            bindData = (name, calo, protein, fat, description, link)
+            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image, recipt) VALUES (%s, %s, %s,%s,%s,%s, %s)"
+            bindData = (name, calo, protein, fat, description, link, recipt)
             cursor.execute(query, bindData)
             conn.commit()
             d = {"status" : "OK"}
@@ -227,9 +229,10 @@ def editFood():
         protein = json_['protein']
         des = json_['description']
         IDfood = json_['ID']
+        recipt = json_['recipt']
         if calo and fat and protein and des and IDfood:
-            sqlquery = "UPDATE food set Calo = %s protein = %s fat = %s des = %s WHERE ID = %s"
-            bindData = (calo, protein, fat, des, IDfood)
+            sqlquery = "UPDATE food set Calo = %s protein = %s fat = %s des = %s recipt = %s WHERE ID = %s"
+            bindData = (calo, protein, fat, des,recipt ,IDfood)
             cursor.execute(sqlquery, bindData)
             conn.commit()
             d = {"status" : "OK"}
@@ -528,6 +531,45 @@ def updatePass():
         if conn.open:
             cursor.close()
             conn.close()
+            
+@app.rotue("/foodReviews", mothods = ['POST'])
+def reviewFood():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        foodid = json_['foodID']
+        userid = json_['userID']
+        cmt = json_['commment']
+        star = json_['star']
+        if star < 0 or star > 5:
+            return jsonify("star is invalid")
+        rc = cursor.execute("SELECT * from review WHERE FoodID = %s and UserID = %s")
+        if rc != 0:
+            rc = cursor.execute('update review set Star = %s, Comment = % WHERE UserID = %s and FoodID = %s', (star, cmt, userid, foodid))
+        cursor.execute("INSERT into review (FoodID, UserID, Comment, Star) values (%s, %s, %s,%s)", (foodid, userid, cmt, star))
+        return jsonify("OK")
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/foodReviews')
+def getReviews():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        foodid = json_()
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
 
 @app.errorhandler(404)
 def showMessage(error=None):
