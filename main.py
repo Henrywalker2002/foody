@@ -532,7 +532,7 @@ def updatePass():
             cursor.close()
             conn.close()
             
-@app.rotue("/foodReviews", mothods = ['POST'])
+@app.route("/foodReviews", methods = ['POST'])
 def reviewFood():
     try:
         conn = mysql.connect()
@@ -570,6 +570,18 @@ def getReviews():
             cursor.close()
             conn.close()
 
+@app.route('/getListFood')
+def getListFood():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
 
 @app.errorhandler(404)
 def showMessage(error=None):
