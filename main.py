@@ -29,7 +29,7 @@ def addFoodWeb():
         if name and calo and protein and fat and description:
             cursor.execute("SELECT * from food WHERE Name = %s", name)
             if cursor.rowcount != 0:
-                d = {"status" :"Food name have already existed"}
+                d = {"result" :"Food name have already existed"}
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
@@ -55,7 +55,7 @@ def CreateAcc():
         _json = request.json
         _name = _json['name']
         _email = _json['email']
-        _DOB = _json['DOB']
+        _DOB = _json['dob']
         _username = _json['username']
         _pass = _json['pass']
         _ques = _json['ques']
@@ -72,7 +72,8 @@ def CreateAcc():
             cursor.execute("SELECT COUNT(*) FROM account WHERE username = %s", _username)
             rowcount = cursor.fetchall()
             if rowcount[0]['COUNT(*)'] != 0:
-                respone = jsonify("Username is exist")
+                d = {"result":"fail", "message" : "username is exist"}
+                respone = jsonify(d)
                 respone.status_code = 200
                 cursor.close()
                 conn.close()
@@ -81,7 +82,8 @@ def CreateAcc():
             bindData = (_username, _pass, _ques, _ans, _id)            
             cursor.execute(sqlQuery, bindData)
             conn.commit()
-            respone = jsonify('successfully!')
+            d = {"result":"ok", "message": "successful"}
+            respone = jsonify(d)
             respone.status_code = 200
             cursor.close() 
             conn.close()  
@@ -102,17 +104,18 @@ def CheckAcc():
         curson.execute("SELECT Username, pass, role from account WHERE Username = %s", username_)
         rc = curson.rowcount
         if rc == 0:
-            d = {"Status" : "username is not exist"}
+            d = {"result" : "fail", "message": "username is not exist"}
             response = jsonify(d)
             response.status_code = 200
             return response
         d = curson._result.rows[0]
         if pass_ != d[1]:
-            d = {"Status": "Wrong password"}
+            d = {"result": "fail", "message":"Wrong password"}
             response = jsonify(d)
             response.status_code = 200
             return response
-        d = {"Status":"OK", "role": d[2]}
+        curson.execute('select user_.id from account join user_ on account.userId = user_.id where account.username = %s', username_)
+        d = {"result":"ok", "role": d[2], "userId": curson._result.rows[0][0]}
         response = jsonify(d)
         response.status_code = 200
         return response
@@ -138,7 +141,8 @@ def update_calcTDEE():
             cursor.execute("SELECT UserID from account WHERE Username = %s", username)
             rc = cursor.rowcount
             if rc == 0:
-                reponse = jsonify()
+                d = {"result":"fail", "message":"username is not exist"}
+                reponse = jsonify(d)
                 reponse.status_code = 404
                 return reponse
             d = cursor._result.rows[0]
@@ -172,7 +176,7 @@ def update_calcTDEE():
             bindData = (height, weight, activity, TDEE, object_, userID)
             cursor.execute(query,bindData)
             conn.commit()
-            d = {"Status" :"OK", "TDEE": TDEE}
+            d = {"result" :"ok","message":"success", "TDEE": TDEE}
             reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
@@ -194,12 +198,12 @@ def addFood():
         protein = json_['protein']
         fat = json_['fat']
         description = json_['description']
-        link = json_['link']
+        link = json_['image']
         recipt = json_['recipt']
         if name and calo and protein and fat and description:
             cursor.execute("SELECT * from food WHERE Name = %s", name)
             if cursor.rowcount != 0:
-                d = {"status" :"Food name have already existed"}
+                d = {"result" :"fail", "message":"Food name have already existed"}
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
@@ -207,7 +211,7 @@ def addFood():
             bindData = (name, calo, protein, fat, description, link, recipt)
             cursor.execute(query, bindData)
             conn.commit()
-            d = {"status" : "OK"}
+            d = {"result" : "ok", "message": "success"}
             reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
@@ -228,14 +232,18 @@ def editFood():
         fat = json_['fat']
         protein = json_['protein']
         des = json_['description']
-        IDfood = json_['ID']
+        IDfood = json_['id']
         recipt = json_['recipt']
+        image = json_['image']
         if calo and fat and protein and des and IDfood:
-            sqlquery = "UPDATE food set Calo = %s protein = %s fat = %s des = %s recipt = %s WHERE ID = %s"
-            bindData = (calo, protein, fat, des,recipt ,IDfood)
+            rc = cursor.execute("select * from food where id = %s", IDfood)
+            if rc == 0:
+                d = {"result":"fail", "message" : "food is not exist"}
+            sqlquery = "UPDATE food set Calo = %s, protein = %s, fat = %s, des = %s, recipt = %s, image = %s WHERE ID = %s"
+            bindData = (calo, protein, fat, des,recipt, image ,IDfood)
             cursor.execute(sqlquery, bindData)
             conn.commit()
-            d = {"status" : "OK"}
+            d = {"result" : "ok", "message":"success"}
             reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
@@ -256,14 +264,16 @@ def getFood():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        foodID = json_["foodID"]
+        foodID = json_["foodId"]
         rc = cursor.execute("select * from food where ID = %s", foodID)
         if rc == 0:
-            reponse = jsonify("no food")
+            d = {"result": "fail", "message" : "food is not exist"}
+            reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
         res = cursor.fetchall()
-        reponse = jsonify(res[0])
+        d = {"result":"ok", "message":res[0]}
+        reponse = jsonify(d)
         reponse.status_code = 200
         return reponse
     except Exception as e:
@@ -279,15 +289,19 @@ def delFood():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        foodID = json_["foodID"]
-        rc = cursor.execute("delete from food where ID = %s", foodID)
+        foodID = json_["foodId"]
+        rc = cursor.execute("select * from food where id = %s", foodID)
         if rc == 0:
-            reponse = jsonify("no food")
+            d = {"result": "fail", "message": "food is not exist"}
+            reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
+        rc = cursor.execute("delete from food where ID = %s", foodID)
         conn.commit()
-        reponse = jsonify("OK")
+        d = {"result": "ok", "message":"success"}
+        reponse = jsonify(d)
         reponse.status_code = 200
+        return reponse
     except Exception as e:
         print(e)
     finally:
@@ -301,18 +315,23 @@ def addFav():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        UserID = json_['UserID']
-        FoodID = json_['FoodID']
+        username = json_['username']
+        FoodID = json_['foodId']
+        rc = cursor.execute("select userid from account where username = %s", username)
+        if rc == 0:
+            d ={"result":"fail", "message":"username is not exist"}
+        UserID = cursor._result.rows[0][0]
         if UserID and FoodID:
             rc = cursor.execute("SELECT * FROM pick WHERE userID = %s and foodID = %s", (UserID,FoodID))
             if rc != 0:
-                reponse = jsonify("existence")
+                d = {"result":"fail", "message":"food have already been exist in your list"}
+                reponse = jsonify(d)
                 return reponse
-            query = "INSERT into pick (FoodID,UserID, type) values (%s,%s,%s)"
+            query = "INSERT into pick (FoodID,UserID, type_) values (%s,%s,%s)"
             bindData = (FoodID, UserID, "favorite")
             cursor.execute(query, bindData)
             conn.commit()
-            d = {"status" : "OK"}
+            d = {"result" : "ok", "message":"success"}
             reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
@@ -333,13 +352,18 @@ def getFavList():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        UserID = json_['UserID']
+        username = json_['username']
+        rc = cursor.execute("select userid from account where username = %s", username)
+        if rc == 0:
+            d ={"result":"fail", "message":"username is not exist"}
+        UserID = cursor._result.rows[0][0]
         if UserID and request.method == "GET":
-            sqlquery = "SELECT Name,Calo,Protein,Fat,Des from food WHERE ID IN (SELECT FoodID from pick WHERE UserID = %s)"
+            sqlquery = "SELECT * from food WHERE ID IN (SELECT FoodID from pick WHERE UserID = %s)"
             bindData = (UserID)
             cursor.execute(sqlquery, bindData)
             res = cursor.fetchall()
-            reponse = jsonify(res)
+            d = {"result":"ok", "message":res}
+            reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
         else:
@@ -359,18 +383,23 @@ def delFoodFromList():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        UserID = json_['UserID']
-        FoodID = json_['FoodID']
+        username = json_['username']
+        rc = cursor.execute("select userid from account where username = %s", username)
+        if rc == 0:
+            d ={"result":"fail", "message":"username is not exist"}
+        UserID = cursor._result.rows[0][0]
+        FoodID = json_['foodId']
         if UserID and FoodID and request.method == "DELETE":
-            rc = cursor.execute("DELETE FROM pick WHERE FoodID = %s and UserID = %s and type = %s", (FoodID, UserID, "favorite"))
-            conn.commit()
+            rc = cursor.execute("DELETE FROM pick WHERE FoodID = %s and UserID = %s and type_ = %s", (FoodID, UserID, "favorite"))
             if rc != 0:
-                d = {"Status" : "OK"}
+                d = {"result" : "ok", "message":"success"}
                 reponse = jsonify(d)
                 reponse.status_code = 200
+                conn.commit()
                 return reponse
+            
             else:
-                d = {"Status": "Not exist"}
+                d = {"result": "fail", "message": "food is not exist"}
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
@@ -387,10 +416,14 @@ def createPlan():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        userID = json_['userID']
+        username = json_['username']
+        rc = cursor.execute("select userID from account where username = %s", username)
+        if rc == 0:
+            d = {"result":"fail", "message":"username is not exist"}
+        userID = cursor._result.rows[0][0]
         rc = cursor.execute("SELECT date_,type_ from pick where UserID = %s", (userID))
         if rc != 0 and cursor._result.rows[0][0] == datetime.date.today() and cursor._result.rows[0][1] == "plan":
-            d = {"status": "existence"}
+            d = {"result": "fail", "message":"plan have already been exist"}
             reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
@@ -405,18 +438,21 @@ def createPlan():
         cursor.execute("SELECT TDEE FROM user_ WHERE id = %s", (userID))
         tdee = cursor._rows[0]['TDEE']
         if tdee - s > 500:
-            reponse = jsonify("not enough")
+            d = {"result": "fail", "message": "calo is not enough"}
+            reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
         elif s - tdee > 500:
-            reponse = jsonify("too much")
+            d = {"result": "fail", "message": "calo is too much"}           
+            reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
         cursor.execute("INSERT into pick(userid, foodid, time_, type_, date_) VALUES (%s, %s, %s, %s, %s)", (userID, breakfast, "breakfast", "plan", datetime.date.today()))
         cursor.execute("INSERT into pick(userid, foodid, time_, type_, date_) VALUES (%s, %s, %s, %s, %s)", (userID, lunch, "lunch", "plan", datetime.date.today()))
         cursor.execute("INSERT into pick(userid, foodid, time_, type_, date_) VALUES (%s, %s, %s, %s, %s)", (userID, dinner, "dinner", "plan", datetime.date.today()))
         conn.commit()
-        reponse = jsonify("OK")
+        d = {"result":"ok", "message":"success"}
+        reponse = jsonify(d)
         reponse.status_code = 200
         return reponse
     except Exception as e:
@@ -432,16 +468,22 @@ def getFoodPlan():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        userID = json_['userID']
+        username = json_['username']
+        rc = cursor.execute("select userID from account where username = %s", username)
+        if rc == 0:
+            d = {"result":"fail", "message":"username is not exist"}
+        userID = cursor._result.rows[0][0]
         rc = cursor.execute("SELECT foodID FROM pick WHERE UserID = %s and date_ = DATE(now())", userID)
         if rc == 0:
-            reponse = jsonify("Not exist")
+            d = {"result" : "fail", "message":"do not have plan for today"}
+            reponse = jsonify(d)
             reponse.status_code = 200
             return reponse
         res = cursor.fetchall()
         cursor.execute("SELECT * FROM food WHERE id in (%s, %s,%s)", (res[0]['foodID'], res[1]['foodID'], res[2]['foodID']))
         final = cursor.fetchall()
-        reponse = jsonify(final)
+        d = {"result":"ok", "message":final}
+        reponse = jsonify(d)
         reponse.status_code = 200
         return reponse
     except Exception as e:
@@ -460,7 +502,8 @@ def findByName():
         text = json_['text']
         cursor.execute("select *, match (Des) against (%s) as score from food where  match (Des) against (%s) > 0", (text, text))
         res = cursor.fetchall()
-        response = jsonify(res)
+        d = {"result":"ok", "message": res}
+        response = jsonify(d)
         response.status_code = 200
         return response
     except Exception as e:
@@ -481,11 +524,14 @@ def checkQues():
         username = json_['username']
         rc = cursor.execute("select ques, ans from account where username = %s", username)
         if rc == 0:
-            return jsonify("username is not exist")
+            d = {"result": "fail", "message": "username is not exist"}
+            return jsonify(d)
         if ques == cursor._rows[0]['ques'] and ans == cursor._rows[0]['ans']:
-            return jsonify("correct")
+            d = {"result": "ok", "message": "correct"}
+            return jsonify(d)
         else:
-            return jsonify("not correct")
+            d = {"result": "fail", "message": "incorrect"}
+            return jsonify(d)
         
     except Exception as e:
         print(e)
@@ -503,8 +549,10 @@ def getPass():
         username = json_['username']
         rc = cursor.execute("select pass from account where username = %s", username)
         if rc == 0:
-            return jsonify("user is not exist")
-        return jsonify(cursor._rows[0]['pass'])
+            d = {"result": "fail", "message": "user is not exist"}
+            return jsonify(d)
+        d = {"result": "ok", "password": cursor._rows[0]['pass']}        
+        return jsonify(d)
     except Exception as e:
         print(e)
     finally:
@@ -522,9 +570,11 @@ def updatePass():
         newPass = json_['newPass']
         rc = cursor.execute("update account set pass = %s where username = %s",(newPass, username))
         if rc == 0:
-            return jsonify("not successful")
+            d = {"result": "fail", "message": "do not success"}
+            return jsonify(d)
         conn.commit()
-        return jsonify("OK")
+        d = {"result": "ok", "message": "success"}
+        return jsonify(d)
     except Exception as e:
         print(e)
     finally:
@@ -538,12 +588,17 @@ def reviewFood():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        foodid = json_['foodID']
-        userid = json_['userID']
+        username = json_['username']
+        foodid = json_['foodId']
         cmt = json_['comment']
         star = json_['star']
+        rc = cursor.execute("select userID from account where username = %s", username)
+        if rc == 0:
+            d = {"result":"fail", "message":"username is not exist"}
+        userid = cursor._result.rows[0][0]
         if star < 0 or star > 5:
-            return jsonify("star is invalid")
+            d = {"result": "fail", "message": "star is invalid"}
+            return jsonify(d)
         rc = cursor.execute("SELECT * from review WHERE FoodID = %s and UserID = %s", (foodid, userid))
         if rc != 0:
             rc = cursor.execute('update review set Star = %s, Comment = %s WHERE UserID = %s and FoodID = %s', (star, cmt, userid, foodid))
@@ -554,7 +609,8 @@ def reviewFood():
         avgStar = avgStar['avg(star)']
         cursor.execute("update food set avgStar = %s where id = %s", (avgStar, foodid))
         conn.commit()
-        return jsonify("OK")
+        d = {"result": "ok", "message": "success"}
+        return jsonify(d)
     except Exception as e:
         print(e)
     finally:
@@ -568,10 +624,11 @@ def getReviews():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
-        foodid = json_['foodID']
-        rc = cursor.execute("select * from review where foodID = %s", foodid)
-        res = cursor.fetchall()
-        return jsonify(res)
+        foodid = json_['foodId']
+        rc = cursor.execute("select username, `comment`, star from account join review on account.userid = review.userId where foodid = %s", foodid)
+        # res = cursor.fetchall()
+        d = {"result": "ok", "message": cursor.fetchall()}
+        return jsonify(d)
     except Exception as e:
         print(e)
     finally:
@@ -585,8 +642,9 @@ def getListFood():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         rc = cursor.execute("SELECT * FROM food order by rand() limit 40")
-        res = cursor.fetchall()
-        return jsonify(res)
+        # res = cursor.fetchall()
+        d = {"result":"ok", "message":cursor.fetchall()}
+        return jsonify(d)
     except Exception as e:
         print(e)
     finally:
