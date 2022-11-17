@@ -257,7 +257,7 @@ def getFood():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         foodID = json_["foodID"]
-        rc = cursor.execute("select * from food where foodID = %s", foodID)
+        rc = cursor.execute("select * from food where ID = %s", foodID)
         if rc == 0:
             reponse = jsonify("no food")
             reponse.status_code = 200
@@ -433,7 +433,7 @@ def getFoodPlan():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         userID = json_['userID']
-        rc = cursor.execute("SELECT foodID FROM pick WHERE UserID = %s and date = DATE(now())", userID)
+        rc = cursor.execute("SELECT foodID FROM pick WHERE UserID = %s and date_ = DATE(now())", userID)
         if rc == 0:
             reponse = jsonify("Not exist")
             reponse.status_code = 200
