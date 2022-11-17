@@ -93,7 +93,7 @@ def CreateAcc():
     except Exception as e:
         print(e)        
      
-@app.route('/Account')
+@app.route('/getAccount', methods = ['POST'])
 def CheckAcc():
     try:
         conn = mysql.connect()
@@ -126,7 +126,7 @@ def CheckAcc():
             curson.close()
             conn.close()
             
-@app.route('/getDetailAcc', methods = ['GET'])
+@app.route('/getDetailAcc', methods = ['GET', 'POST'])
 def getAcc():
     try:
         conn = mysql.connect()
@@ -284,7 +284,7 @@ def editFood():
             cursor.close()
             conn.close()
 
-@app.route('/food')
+@app.route('/getFood', methods =['GET', 'POST'])
 def getFood():
     try:
         conn = mysql.connect()
@@ -372,7 +372,7 @@ def addFav():
             cursor.close()
             conn.close()
 
-@app.route('/favList')
+@app.route('/getFavList', methods = ['GET', 'POST'])
 def getFavList():
     try:
         conn = mysql.connect()
@@ -488,7 +488,7 @@ def createPlan():
             cursor.close()
             conn.close()
 
-@app.route('/plan')
+@app.route('/getPlan', methods = ['GET', 'POST'])
 def getFoodPlan():
     try:
         conn = mysql.connect()
@@ -519,7 +519,7 @@ def getFoodPlan():
             cursor.close()
             conn.close()
             
-@app.route('/search', methods = ['GET'])
+@app.route('/search', methods = ['GET', 'POST'])
 def findByName():
     try:
         conn = mysql.connect()
@@ -539,7 +539,7 @@ def findByName():
             cursor.close()
             conn.close()
 
-@app.route('/forgotpass', methods = ['GET'])
+@app.route('/getForgotpass', methods = ['GET', 'POST'])
 def checkQues():
     try:
         conn = mysql.connect()
@@ -566,7 +566,7 @@ def checkQues():
             cursor.close()
             conn.close()
             
-@app.route("/password", methods = ['GET'])
+@app.route("/getPassword", methods = ['GET', 'POST'])
 def getPass():
     try:
         conn = mysql.connect()
@@ -644,7 +644,7 @@ def reviewFood():
             cursor.close()
             conn.close()
 
-@app.route('/foodReviews')
+@app.route('/getFoodReviews', methods = ['POST'])
 def getReviews():
     try:
         conn = mysql.connect()
