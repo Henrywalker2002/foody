@@ -383,7 +383,7 @@ def getFavList():
         if rc == 0:
             d ={"result":"fail", "message":"username is not exist"}
         UserID = cursor._result.rows[0][0]
-        if UserID and request.method == "GET":
+        if UserID:
             sqlquery = "SELECT * from food WHERE ID IN (SELECT FoodID from pick WHERE UserID = %s)"
             bindData = (UserID)
             cursor.execute(sqlquery, bindData)
