@@ -125,6 +125,32 @@ def CheckAcc():
         if conn.open:
             curson.close()
             conn.close()
+            
+@app.route('/getDetailAcc', methods = ['GET'])
+def getAcc():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        username = json_['username']
+        rc = cursor.execute('select role from account where username = %s', username)
+        if rc == 0:
+            d ={"result":"fail", "message":"username is not exist"}
+        role = cursor._result.rows[0][0]
+        if role == 1:
+            cursor.execute('select * from account join user_ on account.userid = user_.id where username = %s', username)
+            d = {"result":"ok", "message": cursor.fetchall()}
+            return jsonify(d)
+        else:
+            cursor.execute("select * from account join admin on account.adminid = admin.id where username = %s", username)
+            d = {"result":"ok", "message":cursor.fetchall()}
+            return jsonify(d)
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
 
 @app.route('/CalcTDEE', methods = ['PUT'])
 def update_calcTDEE():
