@@ -115,7 +115,7 @@ def CheckAcc():
             response.status_code = 200
             return response
         curson.execute('select user_.id from account join user_ on account.userId = user_.id where account.username = %s', username_)
-        d = {"result":"ok", "role": d[2], "userId": curson._result.rows[0][0]}
+        d = {"result":"ok", "role": d[2]}
         response = jsonify(d)
         response.status_code = 200
         return response
@@ -139,11 +139,21 @@ def getAcc():
         role = cursor._result.rows[0][0]
         if role == 1:
             cursor.execute('select * from account join user_ on account.userid = user_.id where username = %s', username)
-            d = {"result":"ok", "message": cursor.fetchall()}
+            temp =cursor.fetchall()
+            temp[0].pop('userId')
+            temp[0].pop('id')
+            temp[0].pop('adminId')
+            temp[0].pop('user_.id')
+            d = {"result":"ok", "message": temp}
             return jsonify(d)
         else:
             cursor.execute("select * from account join admin on account.adminid = admin.id where username = %s", username)
-            d = {"result":"ok", "message":cursor.fetchall()}
+            temp = cursor.fetchall()
+            temp[0].pop("userId")
+            temp[0].pop('admin.id')
+            temp[0].pop('adminId')
+            temp[0].pop('id')
+            d = {"result":"ok", "message":temp}
             return jsonify(d)
     except Exception as e:
         print(e)
