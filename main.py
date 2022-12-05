@@ -358,7 +358,7 @@ def addFav():
             d ={"result":"fail", "message":"username is not exist"}
         UserID = cursor._result.rows[0][0]
         if UserID and FoodID:
-            rc = cursor.execute("SELECT * FROM pick WHERE userID = %s and foodID = %s", (UserID,FoodID))
+            rc = cursor.execute("SELECT * FROM pick WHERE userID = %s and foodID = %s and type_  = %s", (UserID,FoodID, "favorite"))
             if rc != 0:
                 d = {"result":"fail", "message":"food have already been exist in your list"}
                 reponse = jsonify(d)
@@ -394,8 +394,8 @@ def getFavList():
             d ={"result":"fail", "message":"username is not exist"}
         UserID = cursor._result.rows[0][0]
         if UserID:
-            sqlquery = "SELECT * from food WHERE ID IN (SELECT FoodID from pick WHERE UserID = %s)"
-            bindData = (UserID)
+            sqlquery = "SELECT * from food WHERE ID IN (SELECT FoodID from pick WHERE UserID = %s and type_ = %s)"
+            bindData = (UserID, "favorite")
             cursor.execute(sqlquery, bindData)
             res = cursor.fetchall()
             d = {"result":"ok", "message":res}
