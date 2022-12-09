@@ -6,7 +6,7 @@ from flask import flash, request, render_template
 import time
 from datetime import datetime
 import datetime
-
+import random
 time.strftime('%d-%m-%Y')
 
 @app.route('/')
@@ -236,6 +236,11 @@ def addFood():
         description = json_['description']
         link = json_['image']
         recipt = json_['recipt']
+        carb = ""
+        if 'carb' in json_:
+            carb = json_['carb']
+        else:
+            carb = random.randint(100, 150)
         if name and calo and protein and fat and description:
             cursor.execute("SELECT * from food WHERE Name = %s", name)
             if cursor.rowcount != 0:
@@ -243,8 +248,8 @@ def addFood():
                 reponse = jsonify(d)
                 reponse.status_code = 200
                 return reponse
-            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image, recipt) VALUES (%s, %s, %s,%s,%s,%s, %s)"
-            bindData = (name, calo, protein, fat, description, link, recipt)
+            query = "INSERT into food(Name, Calo, Protein, Fat, Des, image, recipt, carb) VALUES (%s, %s, %s,%s,%s,%s, %s, %s)"
+            bindData = (name, calo, protein, fat, description, link, recipt,carb)
             cursor.execute(query, bindData)
             conn.commit()
             d = {"result" : "ok", "message": "success"}
@@ -271,12 +276,17 @@ def editFood():
         IDfood = json_['id']
         recipt = json_['recipt']
         image = json_['image']
+        carb = ""
+        if 'carb' in json_:
+            carb = json_['carb']
+        else:
+            carb = random.randint(100, 150)
         if calo and fat and protein and des and IDfood:
             rc = cursor.execute("select * from food where id = %s", IDfood)
             if rc == 0:
                 d = {"result":"fail", "message" : "food is not exist"}
-            sqlquery = "UPDATE food set Calo = %s, protein = %s, fat = %s, des = %s, recipt = %s, image = %s WHERE ID = %s"
-            bindData = (calo, protein, fat, des,recipt, image ,IDfood)
+            sqlquery = "UPDATE food set Calo = %s, protein = %s, fat = %s, des = %s, recipt = %s, image = %s, carb = %s WHERE ID = %s"
+            bindData = (calo, protein, fat, des,recipt, image , carb,IDfood)
             cursor.execute(sqlquery, bindData)
             conn.commit()
             d = {"result" : "ok", "message":"success"}
@@ -678,6 +688,22 @@ def getListFood():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         rc = cursor.execute("SELECT * FROM food order by rand() limit 40")
+        # res = cursor.fetchall()
+        d = {"result":"ok", "message":cursor.fetchall()}
+        return jsonify(d)
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+            
+@app.route('/getListUser', methods = ['GET'])
+def getListUser():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        rc = cursor.execute("select username, userId as id, role from account where userId != 0")
         # res = cursor.fetchall()
         d = {"result":"ok", "message":cursor.fetchall()}
         return jsonify(d)
