@@ -48,7 +48,6 @@ def addFoodWeb():
             cursor.close()
             conn.close()
 
-
 @app.route('/Account', methods=['POST'])
 def CreateAcc():
     try:        
@@ -101,7 +100,7 @@ def CheckAcc():
         json_ = request.json
         username_ = json_['username']
         pass_ = json_['pass']
-        curson.execute("SELECT Username, pass, role from account WHERE Username = %s", username_)
+        curson.execute("SELECT Username, pass, role, status from account WHERE Username = %s", username_)
         rc = curson.rowcount
         if rc == 0:
             d = {"result" : "fail", "message": "username is not exist"}
@@ -115,7 +114,7 @@ def CheckAcc():
             response.status_code = 200
             return response
         curson.execute('select user_.id from account join user_ on account.userId = user_.id where account.username = %s', username_)
-        d = {"result":"ok", "role": d[2]}
+        d = {"result":"ok", "role": d[2], "status":d[3]}
         response = jsonify(d)
         response.status_code = 200
         return response
@@ -703,9 +702,43 @@ def getListUser():
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        rc = cursor.execute("select username, userId as id, role from account where userId != 0")
+        rc = cursor.execute("select username, userId as id, role, status from account where userId != 0")
         # res = cursor.fetchall()
         d = {"result":"ok", "message":cursor.fetchall()}
+        return jsonify(d)
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/banAcc', methods = ['GET', 'POST'])
+def ban():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        rc = cursor.execute('update account set status = 0 where username = %s', json_['username'])
+        conn.commit()
+        d = {"result":"ok","message" :"success"}
+        return jsonify(d)
+    except Exception as e:
+        print(e)
+    finally:
+        if conn.open:
+            cursor.close()
+            conn.close()
+
+@app.route('/unlockAcc', methods = ['GET', 'POST'])
+def ban():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        json_ = request.json
+        rc = cursor.execute('update account set status = 1 where username = %s', json_['username'])
+        conn.commit()
+        d = {"result":"ok","message" :"success"}
         return jsonify(d)
     except Exception as e:
         print(e)
