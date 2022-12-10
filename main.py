@@ -720,6 +720,9 @@ def ban():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         rc = cursor.execute('update account set status = 0 where username = %s', json_['username'])
+        if rc == 0:
+            d = {"result":"fail", "message":"username is not exist or account have been already banned"}
+            return jsonify(d)
         conn.commit()
         d = {"result":"ok","message" :"success"}
         return jsonify(d)
@@ -731,12 +734,15 @@ def ban():
             conn.close()
 
 @app.route('/unlockAcc', methods = ['GET', 'POST'])
-def ban():
+def unlockAcc():
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         json_ = request.json
         rc = cursor.execute('update account set status = 1 where username = %s', json_['username'])
+        if rc == 0:
+            d = {"result":"fail", "message":"username is not exist or account is not banned"}
+            return jsonify(d)
         conn.commit()
         d = {"result":"ok","message" :"success"}
         return jsonify(d)
