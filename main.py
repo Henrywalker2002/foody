@@ -284,6 +284,7 @@ def editFood():
             rc = cursor.execute("select * from food where id = %s", IDfood)
             if rc == 0:
                 d = {"result":"fail", "message" : "food is not exist"}
+                return jsonify(d)
             sqlquery = "UPDATE food set Calo = %s, protein = %s, fat = %s, des = %s, recipt = %s, image = %s, carb = %s WHERE ID = %s"
             bindData = (calo, protein, fat, des,recipt, image , carb,IDfood)
             cursor.execute(sqlquery, bindData)
